@@ -1,0 +1,186 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تبدیل متن به جدول</title>
+<style>
+body {
+  font-family: Tahoma, Arial, sans-serif;
+  max-width: 850px;
+  margin: 25px auto;
+  padding: 16px;
+  background: #f4f6f8;
+  color: #222;
+}
+h1 { text-align: center; font-size: 25px; }
+p { line-height: 1.9; }
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 180px;
+  padding: 12px;
+  font: 16px/1.8 Tahoma, Arial, sans-serif;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  background: white;
+}
+button {
+  padding: 11px 16px;
+  margin: 8px 4px 8px 0;
+  border: 0;
+  border-radius: 7px;
+  background: #1769aa;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+button:disabled { opacity: .5; }
+#message { font-weight: bold; }
+.table-wrap { overflow-x: auto; margin-top: 15px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+th, td {
+  border: 1px solid #bbb;
+  padding: 10px;
+  text-align: right;
+  white-space: pre-wrap;
+}
+th { background: #e1edf8; }
+.small { font-size: 13px; color: #555; }
+</style>
+</head>
+<body>
+<h1>تبدیل متن به جدول</h1>
+<p>متن خود را وارد کنید. ستون‌ها را با ویرگول یا علامت | جدا کنید؛ هر خط یک ردیف جدول خواهد بود.</p>
+
+<textarea id="source" placeholder="مثال:
+نام،سن،شهر
+علی،۳۰،تهران
+مریم،۲۵،شیراز"></textarea>
+
+<div>
+<button id="convert">تبدیل به جدول</button>
+<button id="copy" disabled>کپی جدول</button>
+<button id="download" disabled>دانلود جدول CSV</button>
+</div>
+
+<p id="message" role="status"></p>
+<div id="result" class="table-wrap"></div>
+<p class="small">برای استفاده از این ابزار نیازی به ثبت‌نام نیست. متن شما در همین صفحه پردازش می‌شود.</p>
+
+<script>
+let currentRows = [];
+
+function splitLine(line) {
+  if (line.includes("|")) {
+    return line.split("|").map(x => x.trim());
+  }
+  if (line.includes("،")) {
+    return line.split("،").map(x => x.trim());
+  }
+  if (line.includes(",")) {
+    return line.split(",").map(x => x.trim());
+  }
+  return [line.trim()];
+}
+
+function escapeCSV(value) {
+  return '"' + String(value).replace(/"/g, '""') + '"';
+}
+
+function convertText() {
+  const text = document.getElementById("source").value.trim();
+  const message = document.getElementById("message");
+  const result = document.getElementById("result");
+  result.replaceChildren();
+  currentRows = [];
+
+  if (!text) {
+    message.textContent = "لطفاً ابتدا متن را وارد کنید.";
+    document.getElementById("copy").disabled = true;
+    document.getElementById("download").disabled = true;
+    return;
+  }
+
+  const lines = text.split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean);
+
+  currentRows = lines.map(splitLine).filter(row =>
+    !row.every(cell => /^:?-{3,}:?$/.test(cell))
+  );
+
+  if (!currentRows.length) {
+    message.textContent = "متن قابل تبدیل پیدا نشد.";
+    return;
+  }
+
+  const table = document.createElement("table");
+  const tbody = document.createElement("tbody");
+
+  currentRows.forEach((row, rowIndex) => {
+    const tr = document.createElement("tr");
+    row.forEach(cell => {
+      const td = document.createElement(rowIndex === 0 ? "th" : "td");
+      td.textContent = cell;
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+
+  table.appendChild(tbody);
+  result.appendChild(table);
+
+  message.textContent = "جدول با " + currentRows.length + " ردیف آماده شد.";
+  document.getElementById("copy").disabled = false;
+  document.getElementById("download").disabled = false;
+}
+
+async function copyTable() {
+  if (!currentRows.length) return;
+  const text = currentRows.map(row => row.join("\t")).join("\n");
+
+  try {
+    await navigator.clipboard.writeText(text);
+    document.getElementById("message").textContent =
+      "جدول کپی شد؛ می‌توانید آن را در صفحه‌گسترده بچسبانید.";
+  } catch (e) {
+    const area = document.createElement("textarea");
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    document.getElementById("message").textContent = ok
+      ? "جدول کپی شد."
+      : "کپی خودکار انجام نشد؛ از دانلود CSV استفاده کنید.";
+  }
+}
+
+function downloadCSV() {
+  if (!currentRows.length) return;
+  const csv = "\uFEFF" + currentRows
+    .map(row => row.map(escapeCSV).join(","))
+    .join("\r\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "table.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("convert").addEventListener("click", convertText);
+document.getElementById("copy").addEventListener("click", copyTable);
+document.getElementById("download").addEventListener("click", downloadCSV);
+</script>
+</body>
+</html>
