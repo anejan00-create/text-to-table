@@ -62,6 +62,9 @@ th { background: #e1edf8; }
 نام،سن،شهر
 علی،۳۰،تهران
 مریم،۲۵،شیراز"></textarea>
+  <p>نام ستون‌ها (با ویرگول جدا کنید):</p>
+<input id="columns" type="text" placeholder="مثلاً: نام، سن، شهر"
+style="width:100%;padding:12px;box-sizing:border-box;font-size:16px;">
 
 <div>
 <button id="convert">تبدیل به جدول</button>
@@ -88,6 +91,11 @@ function splitLine(line) {
   }
   return [line.trim()];
 }
+  function splitWithoutSeparator(line, columnCount) {
+  const words = line.trim().split(/\s+/);
+  if (words.length !== columnCount) return null;
+  return words;
+}
 
 function escapeCSV(value) {
   return '"' + String(value).replace(/"/g, '""') + '"';
@@ -111,9 +119,23 @@ function convertText() {
     .map(line => line.trim())
     .filter(Boolean);
 
-  currentRows = lines.map(splitLine).filter(row =>
-    !row.every(cell => /^:?-{3,}:?$/.test(cell))
-  );
+  const columnText = document.getElementById("columns").value.trim();
+const columnNames = columnText ? splitLine(columnText) : [];
+
+currentRows = lines.map(line => {
+  const row = splitLine(line);
+  if (row.length > 1) return row;
+  if (columnNames.length) {
+    return splitWithoutSeparator(line, columnNames.length);
+  }
+  return row;
+}).filter(row => row && !row.every(cell =>
+  /^:?-{3,}:?$/.test(cell)
+));
+
+if (columnNames.length) {
+  currentRows.unshift(columnNames);
+}
 
   if (!currentRows.length) {
     message.textContent = "متن قابل تبدیل پیدا نشد.";
