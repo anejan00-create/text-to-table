@@ -174,38 +174,37 @@ async function copyTable() {
   const escapeHTML = value => String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/>/g, "&gt;");
 
-  const html = `<table style="border-collapse:collapse;direction:rtl;">${
-    currentRows.map((row, i) =>
+  const html = `<table style="border-collapse:collapse;direction:rtl;">
+    ${currentRows.map((row, i) =>
       `<tr>${row.map(cell =>
-        i === 0
-          ? `<th style="border:1px solid black;padding:8px;background:#eee;">${escapeHTML(cell)}</th>`
-          : `<td style="border:1px solid black;padding:8px;">${escapeHTML(cell)}</td>`
+        `<${i === 0 ? "th" : "td"} style="border:1px solid black;padding:8px;">${escapeHTML(cell)}</${i === 0 ? "th" : "td"}>`
       ).join("")}</tr>`
-    ).join("")
-  }</table>`;
+    ).join("")}
+  </table>`;
 
-  const plain = currentRows.map(row => row.join("\t")).join("\n");
+  const area = document.createElement("div");
+  area.contentEditable = "true";
+  area.style.position = "fixed";
+  area.style.left = "-9999px";
+  area.innerHTML = html;
+  document.body.appendChild(area);
 
-  try {
-    const blobHTML = new Blob([html], { type: "text/html" });
-    const blobText = new Blob([plain], { type: "text/plain" });
+  const range = document.createRange();
+  range.selectNodeContents(area);
+  const selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
 
-    await navigator.clipboard.write([
-      new ClipboardItem({
-        "text/html": blobHTML,
-        "text/plain": blobText
-      })
-    ]);
+  const ok = document.execCommand("copy");
 
-    document.getElementById("message").textContent =
-      "جدول خط‌کشی‌شده کپی شد.";
-  } catch (e) {
-    document.getElementById("message").textContent =
-      "کپی با قالب جدول انجام نشد؛ دوباره امتحان کنید.";
-  }
+  selection.removeAllRanges();
+  area.remove();
+
+  document.getElementById("message").textContent = ok
+    ? "جدول کپی شد."
+    : "کپی انجام نشد؛ دوباره امتحان کنید.";
 }
 
 function downloadCSV() {
