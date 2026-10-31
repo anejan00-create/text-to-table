@@ -122,7 +122,7 @@ function convertText() {
   const columnText = document.getElementById("columns").value.trim();
 const columnNames = columnText ? splitLine(columnText) : [];
 
-currentRows = lines.map(line => {
+let dataRows = lines.map(line => {
   const row = splitLine(line);
 
   if (row.length > 1) return row;
@@ -140,7 +140,33 @@ currentRows = lines.map(line => {
 ));
 
 if (columnNames.length) {
-  currentRows.unshift(columnNames);
+  const maxColumns = Math.max(
+    columnNames.length,
+    ...dataRows.map(row => row.length)
+  );
+
+  if (maxColumns > columnNames.length) {
+    const addColumns = confirm(
+      "یک یا چند مقدار اضافی وجود دارد.\n" +
+      "برای افزودن ستون جدید، تأیید را بزنید.\n" +
+      "برای حذف مقادیر اضافی، لغو را بزنید."
+    );
+
+    if (addColumns) {
+      while (columnNames.length < maxColumns) {
+        columnNames.push("ستون جدید " +
+          (columnNames.length + 1 - maxColumns + columnNames.length));
+      }
+    } else {
+      dataRows = dataRows.map(row =>
+        row.slice(0, columnNames.length)
+      );
+    }
+  }
+
+  currentRows = [columnNames, ...dataRows];
+} else {
+  currentRows = dataRows;
 }
   if (!currentRows.length) {
     message.textContent = "متن قابل تبدیل پیدا نشد.";
