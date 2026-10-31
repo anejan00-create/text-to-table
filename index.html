@@ -124,10 +124,16 @@ const columnNames = columnText ? splitLine(columnText) : [];
 
 currentRows = lines.map(line => {
   const row = splitLine(line);
+
   if (row.length > 1) return row;
-  if (columnNames.length) {
-    return splitWithoutSeparator(line, columnNames.length);
+
+  if (columnNames.length > 1) {
+    const words = line.trim().split(/\s+/);
+    if (words.length === columnNames.length) {
+      return words;
+    }
   }
+
   return row;
 }).filter(row => row && !row.every(cell =>
   /^:?-{3,}:?$/.test(cell)
@@ -136,7 +142,6 @@ currentRows = lines.map(line => {
 if (columnNames.length) {
   currentRows.unshift(columnNames);
 }
-
   if (!currentRows.length) {
     message.textContent = "متن قابل تبدیل پیدا نشد.";
     return;
