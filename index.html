@@ -213,7 +213,7 @@ async function copyTable() {
   const html = `<table style="border-collapse:collapse;direction:rtl;">
     ${currentRows.map((row, i) =>
       `<tr>${row.map(cell =>
-        `<${i === 0 ? "th" : "td"} style="border:1px solid black;padding:8px;">${escapeHTML(cell)}</${i === 0 ? "th" : "td"}>`
+`<${i === 0 && document.getElementById("columns").value.trim() ? "th" : "td"} style="border:1px solid black;padding:8px;">${escapeHTML(cell)}</${i === 0 && document.getElementById("columns").value.trim() ? "th" : "td"}>`
       ).join("")}</tr>`
     ).join("")}
   </table>`;
