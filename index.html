@@ -187,7 +187,7 @@ currentRows = currentRows.map(row => {
   currentRows.forEach((row, rowIndex) => {
     const tr = document.createElement("tr");
     row.forEach(cell => {
-      const td = document.createElement(rowIndex === 0 ? "th" : "td");
+      const td = document.createElement(rowIndex === 0 && columnNames.length ? "th" : "td");
       td.textContent = cell;
       tr.appendChild(td);
     });
