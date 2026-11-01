@@ -168,6 +168,14 @@ if (columnNames.length) {
 } else {
   currentRows = dataRows;
 }
+  const maxLength = Math.max(...currentRows.map(row => row.length));
+
+currentRows = currentRows.map(row => {
+  while (row.length < maxLength) {
+    row.push("—");
+  }
+  return row;
+});
   if (!currentRows.length) {
     message.textContent = "متن قابل تبدیل پیدا نشد.";
     return;
